@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>헌트릭스! 중독의 유혹에 맞서 혼문을 완성하라!</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        hunter: {
+                            purple: '#8b5cf6',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            dark: '#0f172a',
+                            panel: '#1e1b4b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans KR', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #090d16;
+            color: #f1f5f9;
+        }
+        .title-font {
+            font-family: 'Black Han Sans', sans-serif;
+        }
+        .neon-glow-pink {
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.4);
+        }
+        .neon-glow-purple {
+            box-shadow: 0 0 25px rgba(139, 92, 246, 0.4);
+        }
+        .neon-glow-cyan {
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.4);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(236, 72, 153, 0.7);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(6, 182, 212, 0.7);
+        }
+        .neon-text-silver {
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 25px rgba(203, 213, 225, 0.8), 0 0 35px rgba(148, 163, 184, 0.6);
+        }
+        .silver-barrier-glow {
+            box-shadow: 0 0 35px rgba(241, 245, 249, 0.5), 0 0 15px rgba(148, 163, 184, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #4c1d95;
+            border-radius: 4px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+    </style>
+
+    <!-- Firebase Modular Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Global Injection Safeguard
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kpop-demon-hunters-quiz';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        
+        window.db = null;
+        window.appId = appId;
+        window.firestoreModules = { collection, addDoc, getDocs };
+
+        if (firebaseConfig) {
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                window.db = getFirestore(app);
+
+                async function initAuth() {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                        console.log("Firebase initialized and authenticated");
+                    } catch(e) {
+                        console.warn("Auth failed fallback:", e);
+                    }
+                }
+                initAuth();
+            } catch (err) {
+                console.warn("Firebase init warning:", err);
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-pink-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="w-full bg-slate-950/90 border-b border-purple-900/50 sticky top-0 z-40 backdrop-blur-md px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goToStartScreen()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 flex items-center justify-center text-white text-xl font-black shadow-lg">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h1 class="title-font text-xl text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-cyan-300 tracking-wider">
+                        HUNTRX : 데몬헌터스
+                    </h1>
+                    <p class="text-[11px] text-purple-300/80 font-semibold">중독 예방 혼문 완성 퀴즈</p>
+                </div>
+            </div>
+
+            <!-- Management Buttons for Teachers -->
+            <div class="flex items-center space-x-2">
+                <button onclick="openImageModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold border border-cyan-500/30 transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-image text-cyan-400"></i>
+                    <span class="hidden sm:inline">이미지 변경</span>
+                </button>
+                <button onclick="openTeacherModal()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 text-xs font-bold border border-purple-500/30 transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-table text-pink-400"></i>
+                    <span class="hidden sm:inline">교사 결과 관리</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Interactive Container -->
+    <main class="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
+
+        <!-- ================= SCREEN 1: INTRO SCREEN ================= -->
+        <section id="screen-intro" class="screen-panel space-y-6 text-center py-4">
+            <div class="relative rounded-3xl p-6 sm:p-10 bg-gradient-to-b from-indigo-950/80 via-slate-900/90 to-slate-950 border-2 border-purple-500/40 neon-glow-purple space-y-6 overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-48 h-48 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <span class="inline-block px-4 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-pink-500/20 text-pink-300 border border-pink-500/40">
+                    🔥 K-POP 데몬 헌터스 보건 미션
+                </span>
+
+                <h2 class="title-font text-3xl sm:text-5xl text-white tracking-wide leading-tight neon-text-pink">
+                    헌트릭스!<br/>
+                    <span class="text-cyan-300 neon-text-cyan">중독의 유혹</span>에 맞서<br/>
+                    <span class="text-pink-400">혼문</span>을 완성하라!
+                </h2>
+
+                <!-- Main Intro Visual Banner / Swappable Image Slot -->
+                <div class="max-w-md mx-auto relative group rounded-2xl overflow-hidden border-2 border-cyan-400/30 bg-slate-950 shadow-xl">
+                    <img id="img-intro-banner" src="https://placehold.co/800x450/1e1b4b/ec4899?text=SAJA+BOYS+VS+DEMON+HUNTERS" alt="사자 보이즈 vs 데몬 헌터스" class="w-full h-48 sm:h-56 object-cover hover:scale-105 transition duration-500" />
+                    
+                    <!-- Quick Image Change Overlay -->
+                    <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center p-3">
+                        <button onclick="triggerFileInput('introBanner')" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs shadow-lg flex items-center space-x-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>메인 이미지 변경 (파일/URL)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 rounded-2xl p-5 border border-purple-800/60 text-slate-200 text-base sm:text-lg leading-relaxed text-left space-y-3 font-medium">
+                    <p class="flex items-start space-x-2">
+                        <span class="text-pink-400 text-xl">⚠️</span>
+                        <span>중독물질에 무너진 악령, <strong class="text-pink-400 font-bold">'사자 보이즈'</strong>가 나타났다!</span>
+                    </p>
+                    <p class="flex items-start space-x-2">
+                        <span class="text-cyan-400 text-xl">🛡️</span>
+                        <span>중독 예방 결계인 <strong class="text-cyan-300 font-bold">'혼문'</strong>을 완성하기 위해서는 여러분이 <strong class="text-purple-300 font-bold">'K-POP 데몬 헌터스'</strong>가 되어 <strong>13개의 암호 퀴즈</strong>를 풀어야 한다!</span>
+                    </p>
+                </div>
+
+                <button onclick="goToSelectHunterScreen()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-pink-600 via-purple-600 to-cyan-600 hover:from-pink-500 hover:to-cyan-500 text-white font-black text-xl shadow-2xl tracking-wider transition transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-3 mx-auto">
+                    <span>게임 시작하기</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 2: SELECT HUNTER ================= -->
+        <section id="screen-hunter-select" class="screen-panel space-y-6 hidden py-4">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-cyan-400">Step 1. 헌터 캐릭터 선택</span>
+                <h2 class="title-font text-3xl sm:text-4xl text-white">함께할 <span class="text-pink-400">플레이어 헌터</span>를 선택하세요!</h2>
+                <p class="text-sm text-slate-300">원하는 헌터를 클릭하면 바로 퀴즈 게임이 시작됩니다.</p>
+            </div>
+
+            <!-- 3 Hunters Grid Selection -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                <!-- Hunter 1: Joy -->
+                <div class="group cursor-pointer rounded-2xl bg-gradient-to-b from-indigo-900/60 to-slate-900 border-2 border-purple-500/40 hover:border-pink-400 p-4 text-center transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-pink-500/30 flex flex-col items-center">
+                    <div class="w-full h-56 rounded-xl overflow-hidden mb-3 border border-purple-400/30 relative">
+                        <img id="img-hunter-joy" src="https://placehold.co/400x500/2e1065/f472b6?text=HUNTER+JOY" alt="조이" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <span class="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-pink-600 text-white text-xs font-black z-10">SPEED</span>
+                        
+                        <!-- Quick Image Overlay -->
+                        <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-2 z-20 gap-2">
+                            <button onclick="event.stopPropagation(); selectHunter('조이 (Joy)')" class="w-full py-2 rounded-xl bg-pink-500 hover:bg-pink-400 text-white font-bold text-xs shadow">
+                                조이로 시작
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerFileInput('hunterJoy')" class="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-pink-300 font-bold text-[11px] border border-pink-500/40 flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>이미지 변경</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="title-font text-2xl text-pink-300">조이 (Joy)</h3>
+                    <p class="text-xs text-slate-300 mt-1">"빠른 직관과 리더십으로 유혹을 퇴치한다!"</p>
+                    <button onclick="selectHunter('조이 (Joy)')" class="mt-3 px-4 py-2 rounded-xl bg-pink-500/20 text-pink-300 text-xs font-bold border border-pink-500/40 w-full group-hover:bg-pink-500 group-hover:text-white transition">
+                        선택 후 시작 ➔
+                    </button>
+                </div>
+
+                <!-- Hunter 2: Rumi -->
+                <div class="group cursor-pointer rounded-2xl bg-gradient-to-b from-indigo-900/60 to-slate-900 border-2 border-purple-500/40 hover:border-cyan-400 p-4 text-center transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-cyan-500/30 flex flex-col items-center">
+                    <div class="w-full h-56 rounded-xl overflow-hidden mb-3 border border-purple-400/30 relative">
+                        <img id="img-hunter-rumi" src="https://placehold.co/400x500/164e63/22d3ee?text=HUNTER+RUMI" alt="루미" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <span class="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-cyan-600 text-white text-xs font-black z-10">BRAIN</span>
+                        
+                        <!-- Quick Image Overlay -->
+                        <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-2 z-20 gap-2">
+                            <button onclick="event.stopPropagation(); selectHunter('루미 (Rumi)')" class="w-full py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow">
+                                루미로 시작
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerFileInput('hunterRumi')" class="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold text-[11px] border border-cyan-500/40 flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>이미지 변경</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="title-font text-2xl text-cyan-300">루미 (Rumi)</h3>
+                    <p class="text-xs text-slate-300 mt-1">"명철한 건강 지식으로 오남용을 간파한다!"</p>
+                    <button onclick="selectHunter('루미 (Rumi)')" class="mt-3 px-4 py-2 rounded-xl bg-cyan-500/20 text-cyan-300 text-xs font-bold border border-cyan-500/40 w-full group-hover:bg-cyan-500 group-hover:text-white transition">
+                        선택 후 시작 ➔
+                    </button>
+                </div>
+
+                <!-- Hunter 3: Mira -->
+                <div class="group cursor-pointer rounded-2xl bg-gradient-to-b from-indigo-900/60 to-slate-900 border-2 border-purple-500/40 hover:border-purple-400 p-4 text-center transition duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-purple-500/30 flex flex-col items-center">
+                    <div class="w-full h-56 rounded-xl overflow-hidden mb-3 border border-purple-400/30 relative">
+                        <img id="img-hunter-mira" src="https://placehold.co/400x500/4c1d95/a855f7?text=HUNTER+MIRA" alt="미라" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+                        <span class="absolute top-2 left-2 px-2.5 py-1 rounded-lg bg-purple-600 text-white text-xs font-black z-10">POWER</span>
+                        
+                        <!-- Quick Image Overlay -->
+                        <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition duration-300 flex flex-col items-center justify-center p-2 z-20 gap-2">
+                            <button onclick="event.stopPropagation(); selectHunter('미라 (Mira)')" class="w-full py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs shadow">
+                                미라로 시작
+                            </button>
+                            <button onclick="event.stopPropagation(); triggerFileInput('hunterMira')" class="w-full py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-300 font-bold text-[11px] border border-purple-500/40 flex items-center justify-center space-x-1">
+                                <i class="fa-solid fa-camera"></i>
+                                <span>이미지 변경</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h3 class="title-font text-2xl text-purple-300">미라 (Mira)</h3>
+                    <p class="text-xs text-slate-300 mt-1">"강인한 신념으로 혼문 결계를 수호한다!"</p>
+                    <button onclick="selectHunter('미라 (Mira)')" class="mt-3 px-4 py-2 rounded-xl bg-purple-500/20 text-purple-300 text-xs font-bold border border-purple-500/40 w-full group-hover:bg-purple-500 group-hover:text-white transition">
+                        선택 후 시작 ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 3: QUIZ SOLVING SCREEN ================= -->
+        <section id="screen-quiz" class="screen-panel space-y-5 hidden py-2">
+            <!-- Top Status Bar & Honmun Completion Bar -->
+            <div class="bg-slate-900/90 rounded-2xl p-4 border border-purple-500/30 space-y-3">
+                <div class="flex items-center justify-between text-xs sm:text-sm font-bold">
+                    <div class="flex items-center space-x-2">
+                        <span class="px-2.5 py-1 rounded-lg bg-pink-500/20 text-pink-300 border border-pink-500/40" id="quiz-hunter-tag">
+                            헌터: 조이
+                        </span>
+                        <span class="text-slate-300" id="quiz-progress-text">퀴즈 1 / 13</span>
+                    </div>
+                    <!-- Timer countdown -->
+                    <div class="flex items-center space-x-2 text-amber-400 bg-amber-500/10 px-3 py-1 rounded-xl border border-amber-500/30">
+                        <i class="fa-solid fa-clock animate-pulse"></i>
+                        <span>제한시간: <strong id="timer-display" class="text-base font-mono">45</strong>초</span>
+                    </div>
+                </div>
+
+                <!-- Honmun Portal Completion Progress Visual -->
+                <div>
+                    <div class="flex justify-between items-center text-[11px] text-purple-300 mb-1">
+                        <span>결계 혼문 완성도</span>
+                        <span id="honmun-percent-text" class="font-extrabold text-pink-400">0%</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-purple-900">
+                        <div id="honmun-progress-bar" class="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 transition-all duration-500" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Quiz Card -->
+            <div class="bg-gradient-to-b from-indigo-950/70 to-slate-900 rounded-3xl p-5 sm:p-7 border-2 border-purple-500/40 space-y-5 shadow-2xl">
+                <!-- Quiz Title & Category -->
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-md text-xs font-extrabold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 mb-2" id="quiz-category">
+                        [퀴즈 카테고리]
+                    </span>
+                    <h3 class="title-font text-2xl sm:text-3xl text-white leading-snug" id="quiz-title">
+                        퀴즈 질문이 들어가는 자리입니다.
+                    </h3>
+                </div>
+
+                <!-- Quiz Swappable Image Section with Quick Change Overlay -->
+                <div id="quiz-img-container" class="relative group w-full max-h-64 rounded-2xl overflow-hidden border border-purple-500/30 bg-slate-950 flex items-center justify-center">
+                    <img id="quiz-image" src="" alt="Quiz Visual" class="w-full h-auto max-h-60 object-contain" />
+                    
+                    <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center p-3">
+                        <button onclick="triggerCurrentQuizImageUpload()" class="px-4 py-2 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs shadow-lg flex items-center space-x-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>현재 문제 이미지 삽입/변경</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quiz Detail Context Text -->
+                <div class="bg-slate-950/70 p-4 rounded-xl border border-slate-800 text-slate-200 text-sm sm:text-base leading-relaxed" id="quiz-description">
+                    퀴즈 상세 내용 및 지문
+                </div>
+
+                <!-- Dynamic Option Area (Multiple Choice / TF / Subjective) -->
+                <div id="quiz-options-container" class="space-y-3">
+                    <!-- Dynamic choice buttons inserted via JavaScript -->
+                </div>
+
+                <!-- Hint Banner (Shown on 2nd Attempt) -->
+                <div id="quiz-hint-box" class="hidden bg-amber-950/60 border border-amber-500/50 p-4 rounded-2xl text-amber-200 text-xs sm:text-sm leading-relaxed space-y-1 animate-fadeIn">
+                    <div class="font-bold text-amber-400 flex items-center space-x-1">
+                        <i class="fa-solid fa-lightbulb text-amber-300"></i>
+                        <span>데몬헌터 힌트 (다시 도전해보세요!):</span>
+                    </div>
+                    <p id="quiz-hint-text">힌트 내용이 표시됩니다.</p>
+                </div>
+
+                <!-- Navigation Controls (Previous Question Supported) -->
+                <div class="flex items-center justify-between pt-3 border-t border-purple-900/40">
+                    <button onclick="prevQuiz()" id="btn-prev-quiz" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-sm border border-slate-700 transition flex items-center space-x-2">
+                        <i class="fa-solid fa-chevron-left"></i>
+                        <span>이전 문제</span>
+                    </button>
+                    
+                    <span class="text-xs text-slate-400">문제 풀이 중 이전 문제 이동 가능</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 4: STUDENT INFO & SUBMIT ================= -->
+        <section id="screen-submit" class="screen-panel space-y-6 hidden py-4 text-center">
+            <div class="bg-gradient-to-b from-indigo-950/90 to-slate-950 rounded-3xl p-6 sm:p-10 border-2 border-pink-500/50 neon-glow-pink space-y-6">
+                <div class="w-20 h-20 rounded-full bg-pink-500/20 border-2 border-pink-400 flex items-center justify-center text-pink-400 text-4xl mx-auto">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+
+                <div class="space-y-2">
+                    <h2 class="title-font text-3xl sm:text-4xl text-white">모든 암호 퀴즈 해독 완료!</h2>
+                    <p class="text-sm sm:text-base text-cyan-300">13개 결계를 풀어 사자 보이즈를 물리치기 직전입니다!</p>
+                </div>
+
+                <!-- Swappable Image: Submit Banner -->
+                <div class="max-w-md mx-auto relative group rounded-2xl overflow-hidden border-2 border-pink-400/30 bg-slate-950 shadow-xl">
+                    <img id="img-submit-banner" src="https://placehold.co/800x450/1e1b4b/38bdf8?text=QUIZ+COMPLETE+DEMON+HUNTERS" alt="퀴즈 완료 배너" class="w-full h-48 sm:h-56 object-cover hover:scale-105 transition duration-500" />
+                    
+                    <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center p-3">
+                        <button onclick="triggerFileInput('submitBanner')" class="px-4 py-2 rounded-xl bg-pink-500 hover:bg-pink-400 text-white font-black text-xs shadow-lg flex items-center space-x-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>완료 화면 이미지 변경 (파일/URL)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/90 p-5 rounded-2xl border border-purple-800/60 max-w-md mx-auto text-left space-y-4">
+                    <h3 class="font-bold text-slate-200 text-sm border-b border-slate-800 pb-2">
+                        📋 참여 결과 기록을 위한 정보를 입력하세요
+                    </h3>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">학번 (예: 10215 또는 1학년 2반 15번)</label>
+                        <input type="text" id="student-id-input" placeholder="학번을 입력하세요" class="w-full bg-slate-950 border border-purple-500/40 rounded-xl p-3.5 text-slate-100 text-base focus:outline-none focus:border-pink-500 font-medium">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">이름</label>
+                        <input type="text" id="student-name-input" placeholder="이름을 입력하세요" class="w-full bg-slate-950 border border-purple-500/40 rounded-xl p-3.5 text-slate-100 text-base focus:outline-none focus:border-pink-500 font-medium">
+                    </div>
+                </div>
+
+                <button onclick="submitStudentResult()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-black text-xl shadow-xl transition transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2 mx-auto">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>최종 결과 제출하기</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= SCREEN 5: FINAL COMPLETION SCREEN ================= -->
+        <section id="screen-final" class="screen-panel space-y-6 hidden py-4 text-center">
+            <div class="bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-950 rounded-3xl p-6 sm:p-10 border-2 border-slate-200/60 silver-barrier-glow space-y-6 relative overflow-hidden">
+                <!-- Silver glowing aura pulse background -->
+                <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-96 h-96 bg-slate-200/10 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+
+                <!-- Swappable Image 5: Final Victory Banner -->
+                <div class="max-w-md mx-auto relative group rounded-2xl overflow-hidden border-2 border-slate-200/70 silver-barrier-glow shadow-2xl z-10">
+                    <img id="img-final-victory" src="https://placehold.co/800x450/0f172a/e2e8f0?text=SILVER+HONMUN+BARRIER+SEALED" alt="혼문 완성 승리" class="w-full h-52 object-cover" />
+                    
+                    <div class="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center p-3">
+                        <button onclick="triggerFileInput('finalVictory')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-xs shadow-lg flex items-center space-x-1.5">
+                            <i class="fa-solid fa-camera"></i>
+                            <span>승리 화면 이미지 변경</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3 relative z-10">
+                    <span class="inline-block px-4 py-1.5 rounded-full text-xs font-black bg-slate-200/20 text-slate-100 border border-slate-300/40 tracking-wider shadow">
+                        ✨ MISSION ACCOMPLISHED ✨
+                    </span>
+                    <h2 class="title-font text-3xl sm:text-5xl text-white neon-text-silver leading-tight tracking-wide">
+                        중독에 대항하여<br/>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-slate-100 via-white to-slate-300">강력한 결계 혼문 완성!!</span>
+                    </h2>
+                    <p class="text-slate-300 text-sm sm:text-base">사자 보이즈를 퇴치하고 학교의 평화를 지켜냈습니다!</p>
+                </div>
+
+                <div class="bg-slate-900/80 p-5 rounded-2xl border border-slate-400/40 max-w-md mx-auto text-left space-y-2 text-sm text-slate-200 shadow-inner relative z-10">
+                    <p><strong class="text-pink-400">선택 헌터:</strong> <span id="final-summary-hunter">조이</span></p>
+                    <p><strong class="text-cyan-300">제출 정보:</strong> <span id="final-summary-student">홍길동</span></p>
+                    <p class="text-xs text-slate-400 pt-2 border-t border-slate-800">결과가 정상적으로 저장되었습니다.</p>
+                </div>
+
+                <button onclick="goToStartScreen()" class="px-8 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-base transition border border-slate-600 relative z-10 shadow-lg">
+                    첫 화면으로 돌아가기
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Hidden Global File Input for Quick Uploads -->
+    <input type="file" id="global-file-input" accept="image/*" class="hidden" onchange="handleGlobalFileSelect(event)">
+
+    <!-- ================= IMAGE SETTINGS & CUSTOMIZATION MODAL ================= -->
+    <div id="imageModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-3xl border-2 border-cyan-500/40 w-full max-w-3xl p-6 space-y-5 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-images text-cyan-400 text-xl"></i>
+                    <h3 class="title-font text-2xl text-white">이미지 전체 변경 및 커스텀 삽입</h3>
+                </div>
+                <button onclick="closeImageModal()" class="text-slate-400 hover:text-slate-200 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300">
+                원하는 항목의 <strong>[파일 선택]</strong> 버튼을 누르거나 이미지 URL을 직접 입력하여 수업 자료에 맞게 사진을 교체하세요!
+            </p>
+
+            <!-- Image Settings List -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar space-y-4 pr-1">
+                <!-- Main & Hunter Images -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 class="text-sm font-bold text-pink-400 border-b border-slate-800 pb-1.5">🎨 메인 및 캐릭터 비주얼</h4>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <!-- Intro Banner -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-slate-200">메인 인트로 배너</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-introBanner" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('introBanner')" class="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+
+                        <!-- Submit Banner -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-slate-200">퀴즈 해독 완료 배너</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-submitBanner" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('submitBanner')" class="px-2.5 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+
+                        <!-- Final Victory -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-slate-200">승리 인트로 배너</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-finalVictory" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('finalVictory')" class="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+
+                        <!-- Hunter Joy -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-pink-300">헌터 조이 (Joy)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-hunterJoy" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('hunterJoy')" class="px-2.5 py-1.5 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+
+                        <!-- Hunter Rumi -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-cyan-300">헌터 루미 (Rumi)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-hunterRumi" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('hunterRumi')" class="px-2.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+
+                        <!-- Hunter Mira -->
+                        <div class="space-y-1">
+                            <label class="font-bold text-purple-300">헌터 미라 (Mira)</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-img-hunterMira" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                                <button onclick="triggerFileInput('hunterMira')" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 13 Quiz Images List -->
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <h4 class="text-sm font-bold text-cyan-400 border-b border-slate-800 pb-1.5">❓ 13개 퀴즈 문제별 이미지</h4>
+                    <div id="quiz-image-inputs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <!-- Dynamic quiz image inputs generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-800">
+                <button onclick="resetImageConfig()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-rose-300 text-xs font-bold border border-rose-800/50">
+                    기본 이미지로 복원
+                </button>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="saveImageModalInputs()" class="px-5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs shadow transition">
+                        입력된 URL 및 파일 저장
+                    </button>
+                    <button onclick="closeImageModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= TEACHER RESULT MANAGEMENT MODAL ================= -->
+    <div id="teacherModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 rounded-3xl border-2 border-purple-500/40 w-full max-w-3xl p-6 space-y-5 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-csv text-pink-400 text-xl"></i>
+                    <h3 class="title-font text-2xl text-white">교사 전용 참여 결과 목록</h3>
+                </div>
+                <button onclick="closeTeacherModal()" class="text-slate-400 hover:text-slate-200 p-2">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-300">
+                학생들의 참여 기록이 실시간으로 집계됩니다. 구글 스프레드시트에 붙여넣을 수 있도록 CSV 복사 및 데이터 관리를 지원합니다.
+            </p>
+
+            <!-- Results Table Area -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar border border-slate-800 rounded-xl bg-slate-950 p-2">
+                <table class="w-full text-left text-xs text-slate-300 border-collapse">
+                    <thead class="sticky top-0 bg-slate-900 text-purple-300 border-b border-slate-800 font-bold">
+                        <tr>
+                            <th class="p-2.5">제출시간</th>
+                            <th class="p-2.5">학번</th>
+                            <th class="p-2.5">이름</th>
+                            <th class="p-2.5">선택 헌터</th>
+                            <th class="p-2.5">정답률</th>
+                            <th class="p-2.5">서술형 답변 (다짐)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teacher-results-tbody" class="divide-y divide-slate-800/60">
+                        <!-- Dynamic rows inserted here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                <button onclick="copyResultsForGoogleSheets()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>구글 복사용 CSV 텍스트 생성</span>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <button onclick="clearLocalRecords()" class="px-3 py-2 rounded-xl bg-rose-950/80 hover:bg-rose-900 text-rose-300 text-xs border border-rose-800">
+                        기록 초기화
+                    </button>
+                    <button onclick="closeTeacherModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold">
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Message -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 pointer-events-none transition-all duration-300 transform translate-y-5 opacity-0">
+        <div id="toast-body" class="bg-indigo-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 border border-indigo-400/30">
+            <i id="toast-icon" class="fa-solid fa-circle-info"></i>
+            <span id="toast-msg">메시지</span>
+        </div>
+    </div>
+
+    <script>
+        /* ================= CONFIGURABLE IMAGE URLS ================= */
+        const DEFAULT_CONFIG_IMAGES = {
+            introBanner: "https://placehold.co/800x450/1e1b4b/ec4899?text=SAJA+BOYS+VS+DEMON+HUNTERS",
+            submitBanner: "https://placehold.co/800x450/1e1b4b/38bdf8?text=QUIZ+COMPLETE+DEMON+HUNTERS",
+            hunterJoy: "https://placehold.co/400x500/2e1065/f472b6?text=HUNTER+JOY",
+            hunterRumi: "https://placehold.co/400x500/164e63/22d3ee?text=HUNTER+RUMI",
+            hunterMira: "https://placehold.co/400x500/4c1d95/a855f7?text=HUNTER+MIRA",
+            finalVictory: "https://placehold.co/800x450/0f172a/e2e8f0?text=SILVER+HONMUN+BARRIER+SEALED",
+            
+            // 13 Quiz Images
+            q1: "https://placehold.co/800x400/1e1b4b/38bdf8?text=DEMON+HUNTERS+QUIZ+01",
+            q2: "https://placehold.co/800x400/1e1b4b/f43f5e?text=DEMON+HUNTERS+QUIZ+02",
+            q3: "https://placehold.co/800x400/1e1b4b/eab308?text=DEMON+HUNTERS+QUIZ+03",
+            q4: "https://placehold.co/800x400/1e1b4b/10b981?text=DEMON+HUNTERS+QUIZ+04",
+            q5: "https://placehold.co/800x400/1e1b4b/a855f7?text=DEMON+HUNTERS+QUIZ+05",
+            q6: "https://placehold.co/800x400/1e1b4b/ec4899?text=DEMON+HUNTERS+QUIZ+06",
+            q7: "https://placehold.co/800x400/1e1b4b/06b6d4?text=DEMON+HUNTERS+QUIZ+07",
+            q8: "https://placehold.co/800x400/1e1b4b/f97316?text=DEMON+HUNTERS+QUIZ+08",
+            q9: "https://placehold.co/800x400/1e1b4b/ef4444?text=DEMON+HUNTERS+QUIZ+09",
+            q10: "https://placehold.co/800x400/1e1b4b/8b5cf6?text=DEMON+HUNTERS+QUIZ+10",
+            q11: "https://placehold.co/800x400/1e1b4b/e11d48?text=DEMON+HUNTERS+QUIZ+11",
+            q12: "https://placehold.co/800x400/1e1b4b/64748b?text=DEMON+HUNTERS+QUIZ+12",
+            q13: "https://placehold.co/800x400/1e1b4b/10b981?text=DEMON+HUNTERS+QUIZ+13"
+        };
+
+        let CONFIG_IMAGES = { ...DEFAULT_CONFIG_IMAGES };
+        let activeTargetKey = null;
+
+        function loadCustomImagesFromStorage() {
+            try {
+                const stored = localStorage.getItem('hunter_custom_images');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    CONFIG_IMAGES = { ...DEFAULT_CONFIG_IMAGES, ...parsed };
+                }
+            } catch(e) {
+                console.warn("Storage load error:", e);
+            }
+        }
+
+        function saveCustomImagesToStorage() {
+            try {
+                localStorage.setItem('hunter_custom_images', JSON.stringify(CONFIG_IMAGES));
+            } catch(e) {
+                console.warn("Storage save error:", e);
+            }
+        }
+
+        /* ================= 13 QUIZZES DATA DEFINITION ================= */
+        const QUIZ_LIST = [
+            {
+                id: 1,
+                category: "담배와 중독물질",
+                title: "퀴즈 1. 진우의 중독",
+                description: "한 번 시작하면 자꾸 생각나서 스스로 끊기 어려운 강력한 의존성이 있습니다. 담배 속 이 지독한 중독물질은 무엇일까요?",
+                imageKey: "q1",
+                type: "mc",
+                options: ["타르", "니코틴", "일산화탄소", "디옥신"],
+                correctIndex: 1,
+                hint: "담배의 강한 중독성을 유발하는 유독 물질로, 뇌의 신경을 자극하여 금단증상을 일으킵니다."
+            },
+            {
+                id: 2,
+                category: "음주와 뇌 건강",
+                title: "퀴즈 2. 유혹",
+                description: "주변 어른들을 보면 술 마시며 놀던데?? 하지만 '악마의 소다팝(술)' 속 알코올(에탄올) 성분은 소중한 뇌를 중독시키고 파괴합니다.<br><br><strong class=\"text-white font-bold\">알코올은 가장 역동적으로 성장하는 청소년 뇌의 어느 부위를 공격하여 머리를 나쁘게 만들까?</strong>",
+                imageKey: "q2",
+                type: "mc",
+                options: ["전두엽 (생각과 판단 담당)", "소뇌 (균형 감각)", "후두엽 (시각 담당)", "달팽이관"],
+                correctIndex: 0,
+                hint: "이 부위는 감정 조절, 이성적 판단, 학습 능력을 담당하며 청소년기에 집중 성숙합니다."
+            },
+            {
+                id: 3,
+                category: "담배 연기의 유해성",
+                title: "퀴즈 3. 귀마의 담배연기",
+                description: "담배에 중독된 진우. 담배연기가 퍼지자 뇌에 산소가 부족해집니다.<br><br><strong class=\"text-white font-bold\">집중력/기억력/운동능력 저하, 키 성장 방해, 칙칙한 피부노화까지 초래하는 담배연기 속 유독가스는 무엇일까요?</strong>",
+                imageKey: "q3",
+                type: "mc",
+                options: ["산소", "이산화탄소", "일산화탄소", "수소"],
+                correctIndex: 2,
+                hint: "혈액 속 헤모글로빈과 결합하여 체내 산소 운반 능력을 획기적으로 떨어뜨리는 가스입니다."
+            },
+            {
+                id: 4,
+                category: "해독 기관",
+                title: "퀴즈 4. 독성 물질 해독",
+                description: "사자 보이즈가 여러 화학 유독 물질을 퍼뜨리기 시작하는데! 헌트릭스는 사력을 다한다.<br><br><strong class=\"text-white font-bold\">우리 몸에 들어온 알코올과 각종 독성 화학 물질을 해독하느라 혹사당하는 대표 장기는 무엇일까요?</strong>",
+                imageKey: "q4",
+                type: "mc",
+                options: ["심장", "간", "위", "폐"],
+                correctIndex: 1,
+                hint: "'몸 안의 침묵의 화학 공장'이라 불리며 체내 독소 해독을 오롯이 전담하는 장기입니다."
+            },
+            {
+                id: 5,
+                category: "전자담배의 진실",
+                title: "퀴즈 5. 10대를 타겟하라!",
+                description: "똑똑해진 사람들은 술담배를 안하기 시작했다! 하지만 10대를 공략하면 된다고? 진우가 움직인다.<br><br><strong class=\"text-white font-bold\">\"전자담배는 향료와 수증기일 뿐이고, 순하게 만들어서 안전해!\"</strong> 유혹하는 진우의 말은 진실일까요, 거짓일까요?",
+                imageKey: "q5",
+                type: "tf",
+                options: ["O (진실이다 - 안전하다)", "X (거짓이다 - 위험하다)"],
+                correctIndex: 1,
+                hint: "전자담배 연기는 단순 수증기가 아니며 중금속, 니코틴, 초미세 입자가 들어있어 몸에 매우 해롭습니다."
+            },
+            {
+                id: 6,
+                category: "중독의 단계",
+                title: "퀴즈 6. 중독으로 가는 관문",
+                description: "흡연만 해? 아니.<br>흡연 후엔 술 등 점차 더 세고 다양한 중독을 선택하게 된다.<br>즉 '담배'가 다른 중독물질로 가는 '관문'이 된 것!<br><br><strong class=\"text-white font-bold\">이런 입구 성격을 가지는 담배, 술 등을 통칭해 무엇이라 할까?</strong>",
+                imageKey: "q6",
+                type: "mc",
+                options: ["관문 약물 (Gateway Drug)", "디톡스 약물 (Detox Drug)", "시너지 약물 (Synergy Drug)", "차단 약물 (Blocker Drug)"],
+                correctIndex: 0,
+                hint: "더 강력하고 위험한 중독물질로 진입하는 '입구(Gate)' 역할을 하는 담배, 술 등을 뜻합니다."
+            },
+            {
+                id: 7,
+                category: "마약류와 뇌 손상",
+                title: "퀴즈 7. 마약을 퍼뜨리는 세력",
+                description: "헌트릭스의 방어에도 베이비가 음료를 건넸다! 마약이다!!<br>마약은 뇌에 이것(신경전달물질)을 과도하게 분비시켜 일시적 쾌감을 주지만, 결국 고갈시켜 우리 뇌가 이것을 스스로 분비하는 능력을 망가뜨린다.<br><br><strong class=\"text-white font-bold\">뇌 신경전달물질인 이것은 무엇일까?</strong>",
+                imageKey: "q7",
+                type: "mc",
+                options: ["도파민", "엔도르핀", "인슐린", "멜라토닌"],
+                correctIndex: 0,
+                hint: "쾌락과 보상을 담당하는 대표적인 뇌 신경전달물질로, 마약은 이物質의 조절 회로를 파괴합니다."
+            },
+            {
+                id: 8,
+                category: "유혹 거절하기 (서술형)",
+                title: "퀴즈 8. 먹어봐... 귀마의 접근",
+                description: "포기하지 않는 귀마.<br>귀마는 '집중력 좋아지는 약, 잠 깨는 약'이라며 정체 불명의 알약, 음료를 '무료로 줄 테니 먹어봐'하고 접근한다.<br><br><strong class=\"text-white font-bold\">헌트릭스! 어떻게 거절하고 행동할까요?</strong>",
+                imageKey: "q8",
+                type: "subjective",
+                options: [],
+                correctIndex: -1,
+                hint: "단호하게 거절하고, 빠르게 자리를 피하며, 부모님 또는 경찰(112)에 신고한다."
+            },
+            {
+                id: 9,
+                category: "마약 알바의 함정",
+                title: "퀴즈 9. 고액 알바의 함정",
+                description: "SNS나 텔레그램의 '단순 퀵서비스', '비대면 고액 알바', '문서 전달 심부름'이라며 특정 장소에 물건을 두고 오는 마약 배달 심부름을 한 청소년들.<br><br><strong class=\"text-white font-bold\">\"모르고 한 일\"이었다면 법적 처벌을 받지 않을까요?</strong>",
+                imageKey: "q9",
+                type: "tf",
+                options: ["O (처벌 안 받는다)", "X (모르고 했어도 강력한 처벌을 받는다)"],
+                correctIndex: 1,
+                hint: "마약류 운반 및 전달은 '몰랐다'고 주장하더라도 중범죄로 간주되어 강력한 형사 처벌을 받게 됩니다."
+            },
+            {
+                id: 10,
+                category: "도움 요청 및 신고",
+                title: "퀴즈 10. 구원의 전화번호",
+                description: "마약류 오남용의 유혹이나 위험에 노출되었거나 상담 및 도움이 필요할 때 연결되는 24시간 마약류 중독재활상담 대표 전화번호는 무엇일까요?",
+                imageKey: "q10",
+                type: "mc",
+                options: ["1342 (용기한걸음센터)", "114", "120", "119"],
+                correctIndex: 0,
+                hint: "24시간 운영되는 마약류 중독재활상담 대표 전화번호는 '1342'(용기한걸음센터)입니다."
+            },
+            {
+                id: 11,
+                category: "고카페인 음료 위험성",
+                title: "퀴즈 11. 카페인 음료가 심장을 타격한다",
+                description: "시험기간 편의점에서 에너지 음료 몇 개랑 커피우유 좀 사야하나 고민이라고?....<br><br><strong class=\"text-white font-bold\">하루 에너지 드링크 2캔 이상씩 자주 마시다가 사망한 아이들의 유족들이 제조사를 상대로 소송을 건 사건도 있다?</strong>",
+                imageKey: "q11",
+                type: "tf",
+                options: [
+                    "O (진실이다 - 사망 소송 사례가 실제 존재한다)",
+                    "X (거짓이다 - 카페인 음료로 사망할 일은 없다)"
+                ],
+                correctIndex: 0,
+                hint: "과도한 고카페인 음료 섭취는 심장에 부담을 주어 실제 해외에서 사망 사고 및 유족 소송으로 이어진 사례들이 존재합니다."
+            },
+            {
+                id: 12,
+                category: "3차 흡연의 위험성",
+                title: "퀴즈 12. 흡연으로 오염된 공간, 제3의 피해",
+                description: "귀마는 무찔렀지만, 귀마가 담배를 피우고 지나간 방 벽이나 차량 시트, 옷가지를 만지거나 머무는 것만으로 헌트릭스의 폐 기능은 떨어진다.<br><br><strong class=\"text-white font-bold\">직접 연기를 마시지 않아도, 주변 환경이나 밀폐된 공간에 묻어있는 담배 유해 화학물질을 흡수하여 나타나는 피해를 무엇이라고 할까요?</strong>",
+                imageKey: "q12",
+                type: "mc",
+                options: [
+                    "1차 흡연",
+                    "2차 흡연 (간접흡연)",
+                    "3차 흡연",
+                    "4차 흡연"
+                ],
+                correctIndex: 2,
+                hint: "담배 연기를 직접 마시지 않아도 옷, 가구, 벽 등에 흡착되어 잔류하는 유독 화학물질에 노출되는 피해입니다."
+            },
+            {
+                id: 13,
+                category: "혼문 완성 결의",
+                title: "퀴즈 13. 헌트릭스의 다짐",
+                description: "축하합니다! 12개의 결계를 풀었습니다.<br>마지막 13번째 혼문을 봉인하기 위해 <strong class=\"text-pink-400\">'중독에 빠지지 않고 소중한 나를 지키기 위한 나의 결의 한 줄'</strong>을 서술형으로 작성하세요!",
+                imageKey: "q13",
+                type: "subjective",
+                options: [],
+                correctIndex: -1,
+                hint: "예시: \"나는 내 꿈과 소중한 건강을 위해 술, 담배, 약물의 유혹에 절대 넘어가지 않는 데몬헌터가 되겠다!\""
+            }
+        ];
+
+        /* ================= GAME STATE VARIABLES ================= */
+        let currentQuizIndex = 0;
+        let selectedHunterName = "조이 (Joy)";
+        let studentAnswers = []; // Record per question { attempt1, attempt2, isFirstCorrect, finalCorrect, textAnswer }
+        let currentAttempt = 1;
+        let timerInterval = null;
+        let timeLeft = 45;
+        let localTeacherRecords = [];
+
+        /* ================= NAVIGATION & SCREEN MANAGERS ================= */
+        function hideAllScreens() {
+            document.querySelectorAll('.screen-panel').forEach(s => s.classList.add('hidden'));
+        }
+
+        function goToStartScreen() {
+            stopTimer();
+            hideAllScreens();
+            document.getElementById('screen-intro').classList.remove('hidden');
+            applyConfiguredImagesToUI();
+        }
+
+        function goToSelectHunterScreen() {
+            hideAllScreens();
+            document.getElementById('screen-hunter-select').classList.remove('hidden');
+            applyConfiguredImagesToUI();
+        }
+
+        function selectHunter(hunterName) {
+            selectedHunterName = hunterName;
+            startQuizSession();
+        }
+
+        function startQuizSession() {
+            currentQuizIndex = 0;
+            studentAnswers = new Array(QUIZ_LIST.length).fill(null);
+            hideAllScreens();
+            document.getElementById('screen-quiz').classList.remove('hidden');
+            document.getElementById('quiz-hunter-tag').innerText = `헌터: ${selectedHunterName}`;
+            renderCurrentQuiz();
+        }
+
+        /* ================= QUIZ RENDER & INTERACTION ================= */
+        function renderCurrentQuiz() {
+            stopTimer();
+            currentAttempt = 1;
+
+            const q = QUIZ_LIST[currentQuizIndex];
+
+            // Category & Title & Description
+            document.getElementById('quiz-category').innerText = `[${q.category}]`;
+            document.getElementById('quiz-title').innerText = q.title;
+            document.getElementById('quiz-description').innerHTML = q.description;
+            document.getElementById('quiz-progress-text').innerText = `퀴즈 ${currentQuizIndex + 1} / ${QUIZ_LIST.length}`;
+            
+            // Image assignment
+            const imgEl = document.getElementById('quiz-image');
+            const imgUrl = CONFIG_IMAGES[q.imageKey] || DEFAULT_CONFIG_IMAGES[q.imageKey];
+            imgEl.src = imgUrl;
+
+            // Hint box reset
+            const hintBox = document.getElementById('quiz-hint-box');
+            hintBox.classList.add('hidden');
+            document.getElementById('quiz-hint-text').innerText = q.hint;
+
+            // Prev button visibility
+            const btnPrev = document.getElementById('btn-prev-quiz');
+            if (currentQuizIndex === 0) {
+                btnPrev.classList.add('opacity-50', 'cursor-not-allowed');
+                btnPrev.disabled = true;
+            } else {
+                btnPrev.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnPrev.disabled = false;
+            }
+
+            // Options container
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            if (q.type === 'mc' || q.type === 'tf') {
+                q.options.forEach((optText, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-4 rounded-2xl bg-slate-950/80 hover:bg-slate-800 border-2 border-purple-500/30 hover:border-pink-500 text-slate-100 font-bold text-sm sm:text-base transition duration-200 flex items-center justify-between group shadow";
+                    btn.onclick = (e) => handleChoiceSelect(idx, e.currentTarget);
+                    btn.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <span class="w-8 h-8 rounded-xl bg-purple-900/60 text-purple-300 font-extrabold flex items-center justify-center text-xs group-hover:bg-pink-500 group-hover:text-white transition">
+                                ${idx + 1}
+                            </span>
+                            <span>${optText}</span>
+                        </div>
+                        <i class="fa-solid fa-circle-chevron-right text-purple-500 opacity-0 group-hover:opacity-100 transition"></i>
+                    `;
+                    container.appendChild(btn);
+                });
+            } else if (q.type === 'subjective') {
+                // Subjective Text Input
+                const wrapper = document.createElement('div');
+                wrapper.className = "space-y-3";
+                
+                const existingVal = studentAnswers[currentQuizIndex]?.textAnswer || '';
+                
+                wrapper.innerHTML = `
+                    <div id="subjective-hint-box" class="p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 text-slate-200 text-xs sm:text-sm font-medium flex items-center space-x-2 transition-all duration-200">
+                        <i class="fa-solid fa-lightbulb text-amber-300 shrink-0"></i>
+                        <span class="text-slate-300 font-semibold">${q.hint}</span>
+                    </div>
+                    <textarea id="subjective-input" rows="3" placeholder="답변을 정성껏 입력하세요..." class="w-full bg-slate-950 border-2 border-pink-500/40 rounded-2xl p-4 text-slate-100 text-sm sm:text-base focus:outline-none focus:border-pink-400 font-medium">${existingVal}</textarea>
+                    <button onclick="handleSubjectiveSubmit()" class="w-full py-3.5 rounded-2xl bg-pink-600 hover:bg-pink-500 text-white font-black text-base shadow-xl transition flex items-center justify-center space-x-2">
+                        <span>답변 제출하기</span>
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                `;
+                container.appendChild(wrapper);
+
+                const textarea = wrapper.querySelector('#subjective-input');
+                const hintEl = wrapper.querySelector('#subjective-hint-box');
+
+                // 작성 중(포커스 또는 텍스트 입력 존재) 상태에 따라 힌트 문구 숨김/표시
+                const updateHintVisibility = () => {
+                    const isWriting = document.activeElement === textarea || textarea.value.trim().length > 0;
+                    if (isWriting) {
+                        hintEl.classList.add('hidden');
+                    } else {
+                        hintEl.classList.remove('hidden');
+                    }
+                };
+
+                // 이벤트 리스너 등록
+                textarea.addEventListener('focus', updateHintVisibility);
+                textarea.addEventListener('blur', updateHintVisibility);
+                textarea.addEventListener('input', updateHintVisibility);
+
+                // 초기 상태 체크 (이전에 입력된 값이 있는 경우 고려)
+                updateHintVisibility();
+
+                // Hide generic retry hint box for subjective questions
+                hintBox.classList.add('hidden');
+            }
+
+            updateHonmunProgress();
+            startTimer();
+        }
+
+        /* ================= ANSWER CHECKING LOGIC ================= */
+        function handleChoiceSelect(selectedIndex, clickedBtn) {
+            const q = QUIZ_LIST[currentQuizIndex];
+            const isCorrect = (selectedIndex === q.correctIndex);
+
+            if (!studentAnswers[currentQuizIndex]) {
+                studentAnswers[currentQuizIndex] = {
+                    attempt1: selectedIndex,
+                    attempt2: null,
+                    isFirstCorrect: isCorrect,
+                    finalCorrect: isCorrect,
+                    textAnswer: ""
+                };
+            } else {
+                if (currentAttempt === 2) {
+                    studentAnswers[currentQuizIndex].attempt2 = selectedIndex;
+                    studentAnswers[currentQuizIndex].finalCorrect = isCorrect;
+                }
+            }
+
+            if (isCorrect) {
+                showToast("🎉 정답입니다! 혼문 결계가 더욱 강력해집니다!", "success");
+                nextQuiz();
+            } else {
+                if (currentAttempt === 1) {
+                    currentAttempt = 2;
+                    showToast("❌ 오답입니다! 힌트를 확인하고 한 번 더 도전하세요!", "warning");
+                    document.getElementById('quiz-hint-box').classList.remove('hidden');
+                    
+                    // 2차 시도를 위해 타이머 재설정 및 시작
+                    stopTimer();
+                    startTimer();
+
+                    // 선택했던 오답 버튼 비활성화 시각 효과
+                    if (clickedBtn) {
+                        clickedBtn.disabled = true;
+                        clickedBtn.classList.add('opacity-40', 'line-through', 'border-rose-500/50', 'bg-rose-950/30');
+                        clickedBtn.classList.remove('hover:border-pink-500', 'hover:bg-slate-800');
+                    }
+                } else {
+                    showToast("⚠️ 정답을 다음 기회에! 다음 문제로 이동합니다.", "error");
+                    nextQuiz();
+                }
+            }
+        }
+
+        function handleSubjectiveSubmit() {
+            const inputEl = document.getElementById('subjective-input');
+            const val = inputEl ? inputEl.value.trim() : "";
+            
+            if (!val) {
+                showToast("⚠️ 답변을 입력해주세요!", "warning");
+                return;
+            }
+
+            studentAnswers[currentQuizIndex] = {
+                attempt1: 0,
+                attempt2: 0,
+                isFirstCorrect: true,
+                finalCorrect: true,
+                textAnswer: val
+            };
+
+            showToast("✨ 작성 완료! 다음 문제로 이동합니다.", "success");
+            nextQuiz();
+        }
+
+        function prevQuiz() {
+            if (currentQuizIndex > 0) {
+                currentQuizIndex--;
+                renderCurrentQuiz();
+            }
+        }
+
+        function nextQuiz() {
+            stopTimer();
+            if (currentQuizIndex < QUIZ_LIST.length - 1) {
+                currentQuizIndex++;
+                renderCurrentQuiz();
+            } else {
+                showSubmitScreen();
+            }
+        }
+
+        /* ================= TIMER & HONMUN PROGRESS ================= */
+        function startTimer() {
+            timeLeft = 45;
+            document.getElementById('timer-display').innerText = timeLeft;
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    
+                    if (currentAttempt === 1) {
+                        currentAttempt = 2;
+                        showToast("⏰ 제한시간 초과! 힌트를 확인하고 한 번 더 도전하세요!", "warning");
+                        document.getElementById('quiz-hint-box').classList.remove('hidden');
+                        
+                        if (!studentAnswers[currentQuizIndex]) {
+                            studentAnswers[currentQuizIndex] = {
+                                attempt1: -1,
+                                attempt2: null,
+                                isFirstCorrect: false,
+                                finalCorrect: false,
+                                textAnswer: "1차 시간초과"
+                            };
+                        }
+                        // 2차 시도 타이머 재시작
+                        startTimer();
+                    } else {
+                        showToast("⏰ 시간 초과! 다음 문제로 넘어갑니다.", "error");
+                        if (!studentAnswers[currentQuizIndex]) {
+                            studentAnswers[currentQuizIndex] = {
+                                attempt1: -1,
+                                attempt2: -1,
+                                isFirstCorrect: false,
+                                finalCorrect: false,
+                                textAnswer: "시간초과"
+                            };
+                        } else {
+                            studentAnswers[currentQuizIndex].attempt2 = -1;
+                            studentAnswers[currentQuizIndex].finalCorrect = false;
+                        }
+                        nextQuiz();
+                    }
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateHonmunProgress() {
+            // Calculate completed count
+            let completedCount = 0;
+            for (let i = 0; i < currentQuizIndex; i++) {
+                if (studentAnswers[i] && studentAnswers[i].finalCorrect) {
+                    completedCount++;
+                }
+            }
+            const percent = Math.round((completedCount / QUIZ_LIST.length) * 100);
+            document.getElementById('honmun-percent-text').innerText = `${percent}%`;
+            document.getElementById('honmun-progress-bar').style.width = `${percent}%`;
+        }
+
+        /* ================= SUBMIT & FINAL SCREENS ================= */
+        function showSubmitScreen() {
+            hideAllScreens();
+            document.getElementById('screen-submit').classList.remove('hidden');
+            applyConfiguredImagesToUI();
+        }
+
+        async function submitStudentResult() {
+            const studentId = document.getElementById('student-id-input').value.trim();
+            const studentName = document.getElementById('student-name-input').value.trim();
+
+            if (!studentId || !studentName) {
+                showToast("⚠️ 학번과 이름을 정확히 입력해주세요!", "warning");
+                return;
+            }
+
+            // Calculate correct score
+            let correctFirstTryCount = 0;
+            let finalCorrectCount = 0;
+            studentAnswers.forEach(ans => {
+                if (ans) {
+                    if (ans.isFirstCorrect) correctFirstTryCount++;
+                    if (ans.finalCorrect) finalCorrectCount++;
+                }
+            });
+
+            const totalScorePct = Math.round((finalCorrectCount / QUIZ_LIST.length) * 100);
+            
+            // Collect all subjective answers (Q8, Q13)
+            const subjectiveAns = QUIZ_LIST.map((q, idx) => {
+                if (q.type === 'subjective') {
+                    return `Q${q.id}: ${studentAnswers[idx]?.textAnswer || '미작성'}`;
+                }
+                return null;
+            }).filter(Boolean).join(" | ");
+
+            const resultObj = {
+                timestamp: new Date().toLocaleString('ko-KR'),
+                studentId: studentId,
+                studentName: studentName,
+                hunter: selectedHunterName,
+                scorePercent: `${totalScorePct}% (${finalCorrectCount}/${QUIZ_LIST.length})`,
+                subjective: subjectiveAns
+            };
+
+            // Save to Firestore if available
+            if (window.db && window.firestoreModules) {
+                try {
+                    const { collection, addDoc } = window.firestoreModules;
+                    const pathCol = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'quiz_results');
+                    await addDoc(pathCol, resultObj);
+                    console.log("Result saved to Firestore");
+                } catch(e) {
+                    console.warn("Firestore write error, saving locally:", e);
+                }
+            }
+
+            // Always save locally for fallback
+            saveLocalTeacherRecord(resultObj);
+
+            // Update Final UI
+            document.getElementById('final-summary-hunter').innerText = selectedHunterName;
+            document.getElementById('final-summary-student').innerText = `${studentId} ${studentName}`;
+
+            hideAllScreens();
+            document.getElementById('screen-final').classList.remove('hidden');
+            applyConfiguredImagesToUI();
+            showToast("✅ 결과 제출이 완료되었습니다!", "success");
+        }
+
+        function saveLocalTeacherRecord(rec) {
+            try {
+                let records = JSON.parse(localStorage.getItem('hunter_teacher_records') || '[]');
+                records.unshift(rec);
+                localStorage.setItem('hunter_teacher_records', JSON.stringify(records));
+            } catch(e) {
+                console.warn("Local record save error:", e);
+            }
+        }
+
+        /* ================= IMAGE CUSTOMIZATION & MODAL HANDLERS ================= */
+        function applyConfiguredImagesToUI() {
+            // Main banners
+            if (document.getElementById('img-intro-banner')) {
+                document.getElementById('img-intro-banner').src = CONFIG_IMAGES.introBanner;
+            }
+            if (document.getElementById('img-submit-banner')) {
+                document.getElementById('img-submit-banner').src = CONFIG_IMAGES.submitBanner;
+            }
+            if (document.getElementById('img-final-victory')) {
+                document.getElementById('img-final-victory').src = CONFIG_IMAGES.finalVictory;
+            }
+
+            // Hunters
+            if (document.getElementById('img-hunter-joy')) document.getElementById('img-hunter-joy').src = CONFIG_IMAGES.hunterJoy;
+            if (document.getElementById('img-hunter-rumi')) document.getElementById('img-hunter-rumi').src = CONFIG_IMAGES.hunterRumi;
+            if (document.getElementById('img-hunter-mira')) document.getElementById('img-hunter-mira').src = CONFIG_IMAGES.hunterMira;
+        }
+
+        function openImageModal() {
+            // Populate inputs
+            const keys = ['introBanner', 'submitBanner', 'finalVictory', 'hunterJoy', 'hunterRumi', 'hunterMira'];
+            keys.forEach(k => {
+                const el = document.getElementById(`input-img-${k}`);
+                if (el) el.value = CONFIG_IMAGES[k] || '';
+            });
+
+            // Populate 13 quiz image inputs
+            const container = document.getElementById('quiz-image-inputs-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= 13; i++) {
+                const key = `q${i}`;
+                const div = document.createElement('div');
+                div.className = "space-y-1";
+                div.innerHTML = `
+                    <label class="font-bold text-slate-300">퀴즈 ${i}번 이미지</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-img-${key}" value="${CONFIG_IMAGES[key] || ''}" placeholder="이미지 URL" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-100 text-xs">
+                        <button onclick="triggerFileInput('${key}')" class="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shrink-0">파일 선택</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+
+            document.getElementById('imageModal').classList.remove('hidden');
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').classList.add('hidden');
+        }
+
+        function saveImageModalInputs() {
+            const keys = ['introBanner', 'submitBanner', 'finalVictory', 'hunterJoy', 'hunterRumi', 'hunterMira'];
+            for (let i = 1; i <= 13; i++) keys.push(`q${i}`);
+
+            keys.forEach(k => {
+                const el = document.getElementById(`input-img-${k}`);
+                if (el && el.value.trim()) {
+                    CONFIG_IMAGES[k] = el.value.trim();
+                }
+            });
+
+            saveCustomImagesToStorage();
+            applyConfiguredImagesToUI();
+            
+            // If currently on quiz screen, refresh current image
+            if (!document.getElementById('screen-quiz').classList.contains('hidden')) {
+                const q = QUIZ_LIST[currentQuizIndex];
+                document.getElementById('quiz-image').src = CONFIG_IMAGES[q.imageKey];
+            }
+
+            closeImageModal();
+            showToast("🖼️ 이미지 설정이 성공적으로 변경되었습니다!", "success");
+        }
+
+        function resetImageConfig() {
+            CONFIG_IMAGES = { ...DEFAULT_CONFIG_IMAGES };
+            saveCustomImagesToStorage();
+            applyConfiguredImagesToUI();
+            closeImageModal();
+            showToast("🔄 모든 이미지가 기본 설정으로 복원되었습니다.", "info");
+        }
+
+        function triggerFileInput(targetKey) {
+            activeTargetKey = targetKey;
+            document.getElementById('global-file-input').click();
+        }
+
+        function triggerCurrentQuizImageUpload() {
+            const q = QUIZ_LIST[currentQuizIndex];
+            triggerFileInput(q.imageKey);
+        }
+
+        function handleGlobalFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file || !activeTargetKey) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataDataUrl = e.target.result;
+                CONFIG_IMAGES[activeTargetKey] = dataDataUrl;
+                saveCustomImagesToStorage();
+
+                // If modal input exists, update value
+                const modalInput = document.getElementById(`input-img-${activeTargetKey}`);
+                if (modalInput) modalInput.value = "[업로드된 이미지 파일]";
+
+                applyConfiguredImagesToUI();
+
+                // Update current quiz image instantly if applicable
+                if (!document.getElementById('screen-quiz').classList.contains('hidden')) {
+                    const q = QUIZ_LIST[currentQuizIndex];
+                    if (q.imageKey === activeTargetKey) {
+                        document.getElementById('quiz-image').src = dataDataUrl;
+                    }
+                }
+
+                showToast("📷 이미지가 성공적으로 교체되었습니다!", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* ================= TEACHER RESULTS MODAL HANDLERS ================= */
+        async function openTeacherModal() {
+            let records = [];
+
+            // Attempt to load from Firestore first
+            if (window.db && window.firestoreModules) {
+                try {
+                    const { collection, getDocs } = window.firestoreModules;
+                    const pathCol = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'quiz_results');
+                    const snapshot = await getDocs(pathCol);
+                    snapshot.forEach(doc => {
+                        records.push(doc.data());
+                    });
+                } catch(e) {
+                    console.warn("Firestore fetch error, fallback to local:", e);
+                }
+            }
+
+            // Fallback or merge local records
+            try {
+                const local = JSON.parse(localStorage.getItem('hunter_teacher_records') || '[]');
+                if (records.length === 0) {
+                    records = local;
+                }
+            } catch(e) {}
+
+            localTeacherRecords = records;
+            renderTeacherTable(records);
+            document.getElementById('teacherModal').classList.remove('hidden');
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherModal').classList.add('hidden');
+        }
+
+        function renderTeacherTable(records) {
+            const tbody = document.getElementById('teacher-results-tbody');
+            tbody.innerHTML = '';
+
+            if (records.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-slate-500 font-medium">
+                            아직 제출된 학생 참여 결과가 없습니다.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            records.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/60 transition";
+                tr.innerHTML = `
+                    <td class="p-2.5 text-slate-400">${r.timestamp || '-'}</td>
+                    <td class="p-2.5 font-bold text-pink-300">${r.studentId || '-'}</td>
+                    <td class="p-2.5 font-bold text-slate-100">${r.studentName || '-'}</td>
+                    <td class="p-2.5 text-purple-300">${r.hunter || '-'}</td>
+                    <td class="p-2.5 font-extrabold text-cyan-300">${r.scorePercent || '-'}</td>
+                    <td class="p-2.5 text-slate-300 max-w-xs truncate" title="${r.subjective || ''}">${r.subjective || '-'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function copyResultsForGoogleSheets() {
+            if (localTeacherRecords.length === 0) {
+                showToast("복사할 참여 기록이 없습니다.", "warning");
+                return;
+            }
+
+            let csvText = "제출시간\t학번\t이름\t선택 헌터\t정답률\t서술형 답변(다짐)\n";
+            localTeacherRecords.forEach(r => {
+                csvText += `${r.timestamp}\t${r.studentId}\t${r.studentName}\t${r.hunter}\t${r.scorePercent}\t${r.subjective.replace(/\n/g, " ")}\n`;
+            });
+
+            // ExecCommand fallback for iframe clipboard restriction
+            const textarea = document.createElement('textarea');
+            textarea.value = csvText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("📋 구글 스프레드시트용 CSV 데이터가 클립보드에 복사되었습니다!", "success");
+            } catch(e) {
+                showToast("복사에 실패했습니다.", "error");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function clearLocalRecords() {
+            localStorage.removeItem('hunter_teacher_records');
+            localTeacherRecords = [];
+            renderTeacherTable([]);
+            showToast("🗑️ 저장된 결과 기록이 초기화되었습니다.", "info");
+        }
+
+        /* ================= TOAST NOTIFICATION HELPER ================= */
+        function showToast(message, type = "info") {
+            const toast = document.getElementById('toast');
+            const toastBody = document.getElementById('toast-body');
+            const toastMsg = document.getElementById('toast-msg');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+
+            if (type === "success") {
+                toastBody.className = "bg-emerald-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 border border-emerald-400/30";
+                toastIcon.className = "fa-solid fa-circle-check";
+            } else if (type === "warning") {
+                toastBody.className = "bg-amber-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 border border-amber-400/30";
+                toastIcon.className = "fa-solid fa-triangle-exclamation";
+            } else if (type === "error") {
+                toastBody.className = "bg-rose-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 border border-rose-400/30";
+                toastIcon.className = "fa-solid fa-circle-xmark";
+            } else {
+                toastBody.className = "bg-indigo-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-2 border border-indigo-400/30";
+                toastIcon.className = "fa-solid fa-circle-info";
+            }
+
+            toast.classList.remove('translate-y-5', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-5', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 3000);
+        }
+
+        /* ================= INIT ON LOAD ================= */
+        window.onload = function() {
+            loadCustomImagesFromStorage();
+            applyConfiguredImagesToUI();
+        };
+    </script>
+</body>
+</html>
